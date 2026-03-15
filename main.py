@@ -10,8 +10,6 @@ class MyPlugin(Star):
     async def initialize(self):
         """可选择实现异步的插件初始化方法，当实例化该插件类之后会自动调用该方法。"""
 
-    @filter.command("tetr")
-
     def get_gametime(data):
         if "gametime" not in data:
             return "没有游戏时间数据捏..."
@@ -63,6 +61,7 @@ class MyPlugin(Star):
             return "打的太少，木有rating捏！"
         return str(league_rating)
 
+    @filter.command("tetr")
     async def get_tetrio_user_info(self, event: AstrMessageEvent, user_name:str):
         """获取 TETR.IO 用户信息"""
         r = httpx.get(f"https://ch.tetr.io/api/users/{user_name}")
