@@ -56,7 +56,7 @@ class MyPlugin(Star):
         if "glicko" not in lg_data:
             return "获取rating失败了捏..."
 
-        league_rating = lg_data["glicko"]
+        league_rating = lg_data["tr"]
         if league_rating == -1:
             return "打的太少，木有rating捏！"
         return str(league_rating)
