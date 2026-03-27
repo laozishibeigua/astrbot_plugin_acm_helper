@@ -110,6 +110,8 @@ class MyPlugin(Star):
             final_message += "\n"
             final_message += "Atcoder:\n"
             final_message += atc_context_info
+            final_message += "\n"
+            final_message += "来集训室一起打，依然加练👆"
         
         except Exception as e:
             final_message += "垃圾代码又挂了：" + str(e)
