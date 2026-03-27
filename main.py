@@ -2,99 +2,116 @@ from astrbot.api.event import filter, AstrMessageEvent, MessageEventResult
 from astrbot.api.star import Context, Star, register
 from astrbot.api import logger
 import httpx
+import time
+from bs4 import BeautifulSoup
 
 class MyPlugin(Star):
     def __init__(self, context: Context):
         super().__init__(context)
-
+    
     async def initialize(self):
         """可选择实现异步的插件初始化方法，当实例化该插件类之后会自动调用该方法。"""
 
-    def get_gametime(self, data):
-        if "gametime" not in data:
-            return "没有游戏时间数据捏..."
-        
-        gametime_seconds = data["gametime"]
-        if gametime_seconds == -1:
-            return "人家不想告诉你啦！"
-        
-        hours = gametime_seconds // 3600
-        return f"{hours} 小时"
+    def _build_info_string(self, contests_info, type: str) -> str :
+        try:
+            final_contest_info = ""
 
+            for contest_info in contests_info:
+                final_contest_info += "--------------------\n"
+                final_contest_info += contest_info[0] + "\n"
+                if isinstance(contest_info[1], str):
+                    final_contest_info += "开始时间：" + contest_info[1] + "\n"
+                else:
+                    final_contest_info += "开始时间：" + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(contest_info[1])) + "\n"
+                final_contest_info += "持续时间：" + str(contest_info[2] // 3600) + "小时" + (str(contest_info[2] % 3600 // 60) + "分钟" if contest_info[2] % 3600 != 0 else "") + "\n"
+        
+            return final_contest_info
+        
+        except Exception as e:
 
-    def get_gamesplayed(self, data):
-        if "gamesplayed" not in data:
-            return "没有游戏局数数据捏..."
-        
-        gamesplayed = data["gamesplayed"]
-        
-        return str(gamesplayed)
+            return "垃圾代码又挂了：" + str(e)
 
+    def _get_cf_contest_info(self):
+        cf_contest_request = httpx.get("https://codeforces.com/api/contest.list?gym=false")
+        
+        if cf_contest_request.status_code != 200:
+            return "小北瓜查不到欸，是不是CF又爆炸了？\n"
+        
+        cf_contest_result  = cf_contest_request.json()
 
-    def get_gameswon(self, data):
-        if "gameswon" not in data:
-            return "没有游戏胜利数据捏..."
+        if cf_contest_result["status"] != "OK":
+            return "小北瓜查不到欸，是不是CF又爆炸了？\n"
         
-        gameswon = data["gameswon"]
+        contests_info = [] # not all string 
+        contest_result_recent5 = cf_contest_result["result"][:5][::-1] # get first 5 contest and reverse
+
+        for contest_result in contest_result_recent5:
+            if contest_result["phase"] == "FINISHED":
+                continue
+            contest_info = []
+            contest_info.append(contest_result["name"])
+            contest_info.append(contest_result["startTimeSeconds"])
+            contest_info.append(contest_result["durationSeconds"])
+            contests_info.append(contest_info)
+
+        final_cf_contest_info = self._build_info_string(contests_info, "cf") if contests_info else "好像木有比赛唉\n"
         
-        return str(gameswon)
+        return final_cf_contest_info
+
+    def _get_atc_contest_info(self):
+        atc_contest_request = httpx.get("https://atcoder.jp/home")
+
+        if atc_contest_request.status_code != 200:
+            return "小北瓜查不到欸，是不是atc又爆炸了？\n"
+        
+        elems = BeautifulSoup(atc_contest_request.text,"html.parser").select("#contest-table-upcoming a")
+
+        contest_set = []
+        contests_info = []
+        contest_max_limit = 5
+
+        for index, element in enumerate(elems):
+            element_text = str(element.getText())
+            contest_set.append(element_text)
+
+            if index % 2 == 1:
+                element_link = str(element)
+                start_index = element_link.find('"') + 1
+                end_index = element_link[start_index:].find('"') + start_index
+                contest_set.append("https://atcoder.jp" + element_link[start_index : end_index])
+                contest_set[0] = contest_set[0][:-contest_max_limit]
+                contest_set[0], contest_set[1] = contest_set[1], contest_set[0]
+                if "Beginner" in contest_set[0]:
+                    contest_set[2] = 6000
+                if "Regular" in contest_set[0]:
+                    contest_set[2] = 7200
+
+                if "Beginner" in contest_set[0] or "Regular" in contest_set[0]:
+                    contests_info.append(contest_set)
+                    contest_set = []
+        
+        final_atc_contest_info = self._build_info_string(contests_info, "atc") if contests_info else "好像木有比赛唉\n"
+        
+        return final_atc_contest_info
     
-    def get_league_rating(self, user_name, headers):
-        lg_r = httpx.get(f"https://ch.tetr.io/api/users/{user_name}/summaries/league", headers = headers)
-        if lg_r.status_code != 200:
-            return "获取rating失败了捏..."
-        
-        lg_result_data = lg_r.json()
+    @filter.command("cpcquery")
+    async def cpc_query(self, event: AstrMessageEvent):
+        """用于给用户推送近期cpc比赛信息"""
 
-        if lg_result_data["success"] == False:
-            return "获取rating失败了捏..."
+        final_message = ""
 
-        if "data" not in lg_result_data:
-            return "获取rating失败了捏..."
-        
-        lg_data = lg_result_data["data"]
-        if "glicko" not in lg_data:
-            return "获取rating失败了捏..."
+        try:
+            cf_context_info = self._get_cf_contest_info()
+            atc_context_info = self._get_atc_contest_info()
 
-        league_rating = lg_data["tr"]
-        if league_rating == -1:
-            return "打的太少，木有rating捏！"
-        return str(league_rating)
-
-    @filter.command("tetr")
-    async def get_tetrio_user_info(self, event: AstrMessageEvent, user_name:str):
-        """获取 TETR.IO 用户信息"""
-
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        }
+            final_message +=  "即将到来的比赛：\n"
+            final_message += "CodeForces:\n"
+            final_message += cf_context_info
+            final_message += "\n"
+            final_message += "Atcoder:\n"
+            final_message += atc_context_info
         
-        r = httpx.get(f"https://ch.tetr.io/api/users/{user_name}", headers = headers)
-        
-        if r.status_code != 200:
-            await event.send(event.plain_result(f"获取用户信息失败，状态码: {r.status_code}"))
-            return
-        
-        result_data = r.json()
-
-        if result_data["success"] == False:
-            await event.send(event.plain_result(f"获取用户信息失败，错误信息: {result_data['error']}"))
-            return
-        if "data" not in result_data:
-            await event.send(event.plain_result("获取用户信息失败，不知道为啥木有数据捏"))
-            return
-        
-        data = result_data["data"] 
-
-        gametime_info = self.get_gametime(data)
-        gamesplayed_info = self.get_gamesplayed(data)
-        gameswon_info = self.get_gameswon(data)
-        league_rating_info = self.get_league_rating(user_name,headers)
-        
-        final_message = f"{user_name} 的 tetr.io 信息："
-        final_message += f"\n游戏时间: {gametime_info}"
-        final_message += f"\n游戏局数: {gamesplayed_info}"
-        final_message += f"\n胜利局数: {gameswon_info}"
-        final_message += f"\n联赛rating: {league_rating_info}"
+        except Exception as e:
+            final_message += "垃圾代码又挂了：" + str(e)
 
         await event.send(event.plain_result(final_message))
