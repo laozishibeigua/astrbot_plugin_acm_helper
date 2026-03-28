@@ -3,6 +3,7 @@ from astrbot.api.star import Context, Star, register
 from astrbot.api import logger
 import httpx
 import time
+from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 
 class MyPlugin(Star):
@@ -86,7 +87,9 @@ class MyPlugin(Star):
                 start_index = element_link.find('"') + 1
                 end_index = element_link[start_index:].find('"') + start_index
                 contest_set.append("https://atcoder.jp" + element_link[start_index : end_index])
-                contest_set[0] = contest_set[0][:-contest_max_limit]
+                contest_set[0] = contest_set[0][:-5]
+                contest_set[0] = datetime.strptime(contest_set[0], "%Y-%m-%d %H:%M:%S")
+                contest_set[0] = (contest_set[0] - timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
                 contest_set[0], contest_set[1] = contest_set[1], contest_set[0]
                 if "Beginner" in contest_set[0]:
                     contest_set.append(6000)
