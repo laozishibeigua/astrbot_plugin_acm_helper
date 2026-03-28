@@ -44,7 +44,7 @@ class MyPlugin(Star):
             return "小北瓜查不到欸，是不是CF又爆炸了？\n"
         
         contests_info = [] # not all string 
-        contest_max_limit = 2
+        contest_max_limit = 1
         contest_result_recent = cf_contest_result["result"][:5][::-1] # get first 5 contest and reverse
 
         for contest_result in contest_result_recent:
@@ -73,7 +73,7 @@ class MyPlugin(Star):
 
         contest_set = []
         contests_info = []
-        contest_max_limit = 2
+        contest_max_limit = 1
 
         for index, element in enumerate(elems):
             element_text = str(element.getText())
