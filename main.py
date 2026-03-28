@@ -68,7 +68,7 @@ class MyPlugin(Star):
 
         contest_set = []
         contests_info = []
-        contest_max_limit = 5
+        contest_max_limit = 2
 
         for index, element in enumerate(elems):
             element_text = str(element.getText())
