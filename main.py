@@ -24,7 +24,7 @@ class MyPlugin(Star):
                 else:
                     final_contest_info += "开始时间：" + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(contest_info[1])) + "\n"
                 final_contest_info += "持续时间：" + str(contest_info[2] // 3600) + "小时" + (str(contest_info[2] % 3600 // 60) + "分钟" if contest_info[2] % 3600 != 0 else "") + "\n"
-        
+                final_contest_info += "链接：" + contest_info[3] + "\n"
             return final_contest_info
         
         except Exception as e:
@@ -53,6 +53,7 @@ class MyPlugin(Star):
             contest_info.append(contest_result["name"])
             contest_info.append(contest_result["startTimeSeconds"])
             contest_info.append(contest_result["durationSeconds"])
+            contest_info.append("https://codeforces.com/contest/" + contest_result["id"])
             contests_info.append(contest_info)
 
         final_cf_contest_info = self._build_info_string(contests_info, "cf") if contests_info else "好像木有比赛唉\n"
