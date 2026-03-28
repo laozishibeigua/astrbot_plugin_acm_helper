@@ -53,7 +53,7 @@ class MyPlugin(Star):
             contest_info.append(contest_result["name"])
             contest_info.append(contest_result["startTimeSeconds"])
             contest_info.append(contest_result["durationSeconds"])
-            contest_info.append("https://codeforces.com/contest/" + contest_result["id"])
+            contest_info.append("https://codeforces.com/contest/" + str(contest_result["id"]))
             contests_info.append(contest_info)
 
         final_cf_contest_info = self._build_info_string(contests_info, "cf") if contests_info else "好像木有比赛唉\n"
