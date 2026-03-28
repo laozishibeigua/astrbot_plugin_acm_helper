@@ -44,9 +44,11 @@ class MyPlugin(Star):
         
         contests_info = [] # not all string 
         contest_max_limit = 2
-        contest_result_recent = cf_contest_result["result"][:contest_max_limit][::-1] # get first 5 contest and reverse
+        contest_result_recent = cf_contest_result["result"][:5][::-1] # get first 5 contest and reverse
 
         for contest_result in contest_result_recent:
+            if len(contests_info) >= contest_max_limit:
+                break
             if contest_result["phase"] == "FINISHED":
                 continue
             contest_info = []
