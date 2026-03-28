@@ -86,13 +86,14 @@ class MyPlugin(Star):
                 contest_set[0] = contest_set[0][:-contest_max_limit]
                 contest_set[0], contest_set[1] = contest_set[1], contest_set[0]
                 if "Beginner" in contest_set[0]:
-                    contest_set[2] = 6000
+                    contest_set.append(6000)
                 if "Regular" in contest_set[0]:
-                    contest_set[2] = 7200
+                    contest_set.append(7200)
 
                 if "Beginner" in contest_set[0] or "Regular" in contest_set[0]:
+                    contest_set[2], contest_set[3] = contest_set[3], contest_set[2]
                     contests_info.append(contest_set)
-                    contest_set = []
+                contest_set = []
         
         final_atc_contest_info = self._build_info_string(contests_info, "atc") if contests_info else "好像木有比赛唉\n"
         
